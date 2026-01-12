@@ -1,1 +1,3 @@
-Document
+npm i -D prisma -> install prisma for developer dependency
+npm install @prisma/client
+npx prisma init -> create folder name prisma

@@ -1,0 +1,65 @@
+services:
+  nest-prisma:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nest-prisma-app
+    depends_on:
+      - postgres
+      - redis 
+    env_file:
+      - .env
+    environment:
+      STAGE: dev
+    networks:
+      - app-network
+    ports:
+      - "3000:3000"
+    volumes:
+      - upload_data:/app/uploads
+    command: npm run start:dev
+    restart: unless-stopped 
+
+  postgres:
+    image: postgres:15
+    container_name: nest-prisma-db
+    env_file:
+      - .env.docker
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  redis:
+    image: redis:7-alpine 
+    container_name: redis-cache
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+    volumes:
+      - redis_data:/data  
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  upload_data:
